@@ -5,15 +5,32 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 
-import authRoutes from "./routes/authRoutes";
-import emailRoutes from "./routes/emailRoutes";
-import productRoutes from "./routes/productsRoutes";
-import adminRoutes from "./routes/adminRoutes";
-import cartRoutes from "./routes/cartRoutes";
-import faqRoutes from "./routes/faqRoutes";
-import userRoutes from "./routes/userRoutes";
-import subscriptionRoutes from "./routes/subscriptionRoutes";
-import questionRoutes from "./routes/questionRoutes";
+// Auth
+import authRoutes from "./modules/auth/routes/authRoutes";
+import emailRoutes from "./modules/auth/routes/emailRoutes";
+
+// Products
+import foodProductRoutes from "./modules/food/routes/foodProductRoutes";
+import animalProductRoutes from "./modules/animal/routes/animalProductRoutes";
+
+// Admin
+import foodAdminRoutes from "./modules/food/routes/foodAdminRoutes";
+import animalAdminRoutes from "./modules/animal/routes/animalAdminRoutes";
+import faqAdminRoutes from "./modules/faq/routes/faqAdminRoutes";
+
+// Cart & User
+import cartRoutes from "./modules/cart/routes/cartRoutes";
+import userRoutes from "./modules/user/routes/userRoutes";
+
+// Public
+import faqRoutes from "./modules/faq/routes/faqRoutes";
+import questionRoutes from "./modules/question/routes/questionRoutes";
+import subscriptionRoutes from "./modules/subscription/routes/subscriptionRoutes";
+
+import {
+  authenticateToken,
+} from "./shared/middlewares/authMiddleware";
+import { isAdmin } from "./shared/middlewares/isAdminMiddleware";
 
 const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI as string;
@@ -23,24 +40,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ==================== AUTH ====================
 app.use("/auth", authRoutes);
 app.use("/email", emailRoutes);
-app.use("/products", productRoutes);
-app.use("/admin", adminRoutes);
-app.use("/cart", cartRoutes);
-app.use("/faq", faqRoutes);
-app.use("/user", userRoutes);
-app.use("/subscription", subscriptionRoutes);
-app.use("/question", questionRoutes);
 
+// ==================== PRODUCTS (public) ====================
+app.use("/products/food", foodProductRoutes);
+app.use("/products/animal", animalProductRoutes);
+
+// ==================== ADMIN ====================
+app.use("/admin/food", authenticateToken, isAdmin, foodAdminRoutes);
+app.use("/admin/animal", authenticateToken, isAdmin, animalAdminRoutes);
+app.use("/admin/faq", authenticateToken, isAdmin, faqAdminRoutes);
+
+// ==================== CART & USER ====================
+app.use("/cart", cartRoutes);
+app.use("/user", userRoutes);
+
+// ==================== PUBLIC ====================
+app.use("/faq", faqRoutes);
+app.use("/question", questionRoutes);
+app.use("/subscription", subscriptionRoutes);
+
+// ==================== DB ====================
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log("Successfully connected to MongoDB");
-    app.listen(PORT, () => {
-      console.log(`App is listening on ${PORT} port`);
-    });
+    app.listen(PORT, () =>
+      console.log(`App is listening on port ${PORT}`)
+    );
   })
-  .catch((error: Error) => {
-    console.error("Error connecting to MongoDB:", error);
-  });
+  .catch((error: Error) =>
+    console.error("Error connecting to MongoDB:", error)
+  );

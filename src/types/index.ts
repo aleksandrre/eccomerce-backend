@@ -15,15 +15,18 @@ export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
+// ==================== CART ====================
+
 export interface ICartItem {
   _id?: Types.ObjectId;
   product: Types.ObjectId;
   productType: ProductType;
   quantity: number;
   priceSnapshot: number;
-  saleSnapshot: number;
   image?: string;
 }
+
+// ==================== USER ====================
 
 export interface IUser {
   _id: Types.ObjectId;
@@ -46,6 +49,8 @@ export interface IUser {
   cartSavings: number;
 }
 
+// ==================== FOOD ====================
+
 export interface IFoodCategory {
   _id: Types.ObjectId;
   name: string;
@@ -55,6 +60,31 @@ export interface IFoodCategory {
   route: string;
   products: Types.ObjectId[];
 }
+
+/**
+ * საკვები პროდუქტი (კილოგრამებში).
+ * ფასი ორ-საფეხურიანია:
+ *   - pricePerKg       → ჩვეულებრივი ფასი (kgThreshold-ზე ნაკლები შეკვეთისას)
+ *   - bulkPricePerKg   → ბალახური ფასი (kgThreshold-ის ან მეტის შეკვეთისას)
+ * sale/ფასდაკლების % არ არის - ფასდაკლება მხოლოდ მოცულობის მიხედვით.
+ */
+export interface IFoodProduct {
+  _id: Types.ObjectId;
+  name: string;
+  productType: "food";
+  category: Types.ObjectId;
+  longDescription: string;
+  shortDescription: string;
+  images: string[];
+  isNewProduct: boolean;
+  minKg: number;
+  kgThreshold: number;
+  pricePerKg: number;
+  bulkPricePerKg: number;
+  quantity: number;
+}
+
+// ==================== ANIMAL ====================
 
 export interface IAnimalCategory {
   _id: Types.ObjectId;
@@ -66,26 +96,12 @@ export interface IAnimalCategory {
   products: Types.ObjectId[];
 }
 
-export interface IFoodProduct {
-  _id: Types.ObjectId;
-  name: string;
-  productType: "food";
-  category: Types.ObjectId;
-  longDescription: string;
-  shortDescription: string;
-  images: string[];
-  isNewProduct: boolean;
-  isTopSale: boolean;
-  sale: number;
-  minKg: number;
-  kgThreshold: number;
-  priceBeforeThreshold: number;
-  priceAfterThreshold: number;
-  quantity: number;
-  discountedPriceBeforeThreshold: number;
-  discountedPriceAfterThreshold: number;
-}
-
+/**
+ * ცხოველის საჭმელი (დაფასოებული პაკეტები).
+ * quantity = პაკეტების რაოდენობა.
+ * sale = ფასდაკლების % (0-100).
+ * discountedPrice virtual = price * (1 - sale/100).
+ */
 export interface IAnimalProduct {
   _id: Types.ObjectId;
   name: string;
@@ -95,13 +111,14 @@ export interface IAnimalProduct {
   shortDescription: string;
   images: string[];
   isNewProduct: boolean;
-  isTopSale: boolean;
   sale: number;
   price: number;
   quantity: number;
   packageWeight: string;
   discountedPrice: number;
 }
+
+// ==================== FAQ ====================
 
 export interface IFaqQuestion {
   _id?: Types.ObjectId;
@@ -117,6 +134,8 @@ export interface IFaq {
   questions: IFaqQuestion[];
   isActive: boolean;
 }
+
+// ==================== MISC ====================
 
 export interface IQuestion {
   _id: Types.ObjectId;

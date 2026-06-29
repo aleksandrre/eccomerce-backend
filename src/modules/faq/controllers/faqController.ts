@@ -1,0 +1,93 @@
+import { Request, Response } from "express";
+import { AuthRequest } from "../../../types";
+import { FAQ } from "../models/FaqModel";
+
+export const getAllFAQTypes = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const faqTypes = await FAQ.find({ isActive: true });
+    if (!faqTypes.length) {
+      res.status(404).json({ message: "No FAQ Types found." });
+      return;
+    }
+    res.status(200).json({ message: "FAQ Types fetched successfully", data: faqTypes });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching FAQ Types" });
+  }
+};
+
+export const addFAQType = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { questions, name, icon } = req.body;
+    const faqType = await new FAQ({ name, icon, questions }).save();
+    res.status(201).json({ message: "FAQ Type added", data: faqType });
+  } catch (error) {
+    res.status(500).json({ message: "Error adding FAQ Type" });
+  }
+};
+
+export const deleteFAQType = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const deleted = await FAQ.findByIdAndDelete(req.params.faqTypeId);
+    if (!deleted) {
+      res.status(404).json({ message: "FAQ Type not found" });
+      return;
+    }
+    res.status(200).json({ message: "FAQ Type deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting FAQ Type" });
+  }
+};
+
+export const addFAQQuestion = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { faqTypeId, question, answer } = req.body;
+    const faqType = await FAQ.findById(faqTypeId);
+    if (!faqType) {
+      res.status(404).json({ message: "FAQ Type not found" });
+      return;
+    }
+    faqType.questions.push({ question, answer } as never);
+    await faqType.save();
+    res.status(201).json({ message: "Question added" });
+  } catch (error) {
+    res.status(500).json({ message: "Error adding question" });
+  }
+};
+
+export const deleteFAQQuestion = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { faqTypeId, faqQuestionId } = req.params;
+    const faqType = await FAQ.findById(faqTypeId);
+    if (!faqType) {
+      res.status(404).json({ message: "FAQ Type not found" });
+      return;
+    }
+    const idx = faqType.questions.findIndex(
+      (q) => q._id?.toString() === faqQuestionId
+    );
+    if (idx === -1) {
+      res.status(404).json({ message: "Question not found" });
+      return;
+    }
+    faqType.questions.splice(idx, 1);
+    await faqType.save();
+    res.status(200).json({ message: "Question deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting question" });
+  }
+};
