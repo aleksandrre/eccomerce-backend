@@ -11,14 +11,20 @@ export interface IFaqDocument
   questions: IFaqQuestionDocument[];
 }
 
+const localizedStringSchema = {
+  en: { type: String, required: true },
+  ka: { type: String, default: "" },
+  ru: { type: String, default: "" },
+};
+
 const faqQuestionSchema = new Schema<IFaqQuestionDocument>({
-  question: { type: String, required: true },
-  answer: { type: String, required: true },
+  question: { type: localizedStringSchema, required: true },
+  answer: { type: localizedStringSchema, required: true },
   isActive: { type: Boolean, default: true },
 });
 
 const faqTypeSchema = new Schema<IFaqDocument>({
-  name: { type: String, required: true, unique: true },
+  name: { type: localizedStringSchema, required: true },
   icon: { type: String, required: true },
   questions: [faqQuestionSchema],
   isActive: { type: Boolean, default: true },

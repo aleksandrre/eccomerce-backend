@@ -1,18 +1,27 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../../../types";
 import { FAQ } from "../models/FaqModel";
+import { getLang, localizeDoc } from "../../../shared/utils/lang";
 
 export const getAllFAQTypes = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const faqTypes = await FAQ.find({ isActive: true });
+    const lang = getLang(req);
+    const faqTypes = await FAQ.find({ isActive: true }).lean();
     if (!faqTypes.length) {
       res.status(404).json({ message: "No FAQ Types found." });
       return;
     }
-    res.status(200).json({ message: "FAQ Types fetched successfully", data: faqTypes });
+    const data = faqTypes.map((faq) =>
+      localizeDoc(faq as Record<string, unknown>, [
+        "name",
+        "questions.question",
+        "questions.answer",
+      ], lang)
+    );
+    res.status(200).json({ message: "FAQ Types fetched successfully", data });
   } catch (error) {
     res.status(500).json({ message: "Error fetching FAQ Types" });
   }
@@ -24,6 +33,10 @@ export const addFAQType = async (
 ): Promise<void> => {
   try {
     const { questions, name, icon } = req.body;
+    if (await FAQ.findOne({ "name.en": name?.en })) {
+      res.status(400).json({ message: "FAQ type with this name already exists" });
+      return;
+    }
     const faqType = await new FAQ({ name, icon, questions }).save();
     res.status(201).json({ message: "FAQ Type added", data: faqType });
   } catch (error) {

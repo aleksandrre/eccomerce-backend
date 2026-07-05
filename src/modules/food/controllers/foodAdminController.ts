@@ -15,9 +15,9 @@ export const addFoodCategory = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, geoName, description, icon, route } = req.body;
+    const { name, description, icon, route } = req.body;
 
-    if (await FoodCategory.findOne({ name })) {
+    if (await FoodCategory.findOne({ "name.en": name?.en })) {
       res.status(400).json({
         success: false,
         message: "ასეთი სახელის კატეგორია უკვე არსებობს",
@@ -27,7 +27,6 @@ export const addFoodCategory = async (
 
     const category = await FoodCategory.create({
       name,
-      geoName,
       description,
       icon,
       route,
@@ -90,7 +89,7 @@ export const addFoodProduct = async (
       quantity,
     } = req.body;
 
-    if (await FoodProduct.findOne({ name })) {
+    if (await FoodProduct.findOne({ "name.en": name?.en })) {
       res.status(400).json({
         success: false,
         message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
@@ -166,8 +165,8 @@ export const updateFoodProduct = async (
       return;
     }
 
-    if (name && name !== product.name) {
-      if (await FoodProduct.findOne({ name })) {
+    if (name && name?.en !== product.name?.en) {
+      if (await FoodProduct.findOne({ "name.en": name.en })) {
         res.status(400).json({
           success: false,
           message: "ასეთი სახელის პროდუქტი უკვე არსებობს",

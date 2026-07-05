@@ -15,17 +15,23 @@ export interface IAnimalProductDocument
  * sale = ფასდაკლება %-ში (0-100).
  * discountedPrice (virtual) = price * (1 - sale/100).
  */
+const localizedStringSchema = {
+  en: { type: String, required: true },
+  ka: { type: String, default: "" },
+  ru: { type: String, default: "" },
+};
+
 const animalProductSchema = new Schema<IAnimalProductDocument>(
   {
-    name: { type: String, required: true },
+    name: { type: localizedStringSchema, required: true },
     productType: { type: String, default: "animal", immutable: true },
     category: {
       type: Schema.Types.ObjectId,
       ref: "AnimalCategory",
       required: true,
     },
-    longDescription: { type: String, required: true },
-    shortDescription: { type: String, required: true },
+    longDescription: { type: localizedStringSchema, required: true },
+    shortDescription: { type: localizedStringSchema, required: true },
     images: { type: [String], required: true },
     isNewProduct: { type: Boolean, default: false },
     sale: {

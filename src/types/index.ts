@@ -3,6 +3,12 @@ import { Types } from "mongoose";
 
 export type ProductType = "food" | "animal";
 
+export interface ILocalizedString {
+  en: string;
+  ka: string;
+  ru: string;
+}
+
 export interface JwtPayload {
   id: string;
   name: string;
@@ -53,8 +59,7 @@ export interface IUser {
 
 export interface IFoodCategory {
   _id: Types.ObjectId;
-  name: string;
-  geoName: string;
+  name: ILocalizedString;
   description?: string;
   icon: string;
   route: string;
@@ -70,11 +75,11 @@ export interface IFoodCategory {
  */
 export interface IFoodProduct {
   _id: Types.ObjectId;
-  name: string;
+  name: ILocalizedString;
   productType: "food";
   category: Types.ObjectId;
-  longDescription: string;
-  shortDescription: string;
+  longDescription: ILocalizedString;
+  shortDescription: ILocalizedString;
   images: string[];
   isNewProduct: boolean;
   minKg: number;
@@ -88,8 +93,7 @@ export interface IFoodProduct {
 
 export interface IAnimalCategory {
   _id: Types.ObjectId;
-  name: string;
-  geoName: string;
+  name: ILocalizedString;
   description?: string;
   icon: string;
   route: string;
@@ -104,11 +108,11 @@ export interface IAnimalCategory {
  */
 export interface IAnimalProduct {
   _id: Types.ObjectId;
-  name: string;
+  name: ILocalizedString;
   productType: "animal";
   category: Types.ObjectId;
-  longDescription: string;
-  shortDescription: string;
+  longDescription: ILocalizedString;
+  shortDescription: ILocalizedString;
   images: string[];
   isNewProduct: boolean;
   sale: number;
@@ -122,14 +126,14 @@ export interface IAnimalProduct {
 
 export interface IFaqQuestion {
   _id?: Types.ObjectId;
-  question: string;
-  answer: string;
+  question: ILocalizedString;
+  answer: ILocalizedString;
   isActive: boolean;
 }
 
 export interface IFaq {
   _id: Types.ObjectId;
-  name: string;
+  name: ILocalizedString;
   icon: string;
   questions: IFaqQuestion[];
   isActive: boolean;
