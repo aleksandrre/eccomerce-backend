@@ -79,8 +79,7 @@ export const addFoodProduct = async (
     const {
       name,
       categoryId,
-      longDescription,
-      shortDescription,
+      description,
       isNewProduct,
       minKg,
       kgThreshold,
@@ -111,8 +110,7 @@ export const addFoodProduct = async (
     const product = await FoodProduct.create({
       name,
       category: categoryId,
-      longDescription,
-      shortDescription,
+      description,
       images,
       isNewProduct: Boolean(isNewProduct),
       minKg: Number(minKg),
@@ -147,8 +145,7 @@ export const updateFoodProduct = async (
     const {
       name,
       categoryId,
-      shortDescription,
-      longDescription,
+      description,
       isNewProduct,
       minKg,
       kgThreshold,
@@ -192,8 +189,7 @@ export const updateFoodProduct = async (
       product.category = categoryId;
     }
 
-    if (shortDescription) product.shortDescription = shortDescription;
-    if (longDescription) product.longDescription = longDescription;
+    if (description) product.description = description;
     if (isNewProduct !== undefined)
       product.isNewProduct = Boolean(isNewProduct);
     if (minKg !== undefined) product.minKg = Number(minKg);

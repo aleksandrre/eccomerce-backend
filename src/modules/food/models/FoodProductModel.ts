@@ -29,8 +29,7 @@ const foodProductSchema = new Schema<IFoodProductDocument>(
       ref: "FoodCategory",
       required: true,
     },
-    longDescription: { type: localizedStringSchema, required: true },
-    shortDescription: { type: localizedStringSchema, required: true },
+    description: { type: localizedStringSchema, required: true },
     images: { type: [String], required: true },
     isNewProduct: { type: Boolean, default: false },
     minKg: {

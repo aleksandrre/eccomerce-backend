@@ -78,8 +78,7 @@ export interface IFoodProduct {
   name: ILocalizedString;
   productType: "food";
   category: Types.ObjectId;
-  longDescription: ILocalizedString;
-  shortDescription: ILocalizedString;
+  description: ILocalizedString;
   images: string[];
   isNewProduct: boolean;
   minKg: number;
@@ -111,8 +110,7 @@ export interface IAnimalProduct {
   name: ILocalizedString;
   productType: "animal";
   category: Types.ObjectId;
-  longDescription: ILocalizedString;
-  shortDescription: ILocalizedString;
+  description: ILocalizedString;
   images: string[];
   isNewProduct: boolean;
   sale: number;

@@ -3,7 +3,7 @@ import { AnimalProduct } from "../models/AnimalProductModel";
 import { AnimalCategory } from "../models/AnimalCategoryModel";
 import { getLang, localizeDoc } from "../../../shared/utils/lang";
 
-const PRODUCT_FIELDS = ["name", "longDescription", "shortDescription", "category.name"];
+const PRODUCT_FIELDS = ["name", "description", "category.name"];
 const CATEGORY_FIELDS = ["name"];
 
 function localizeProduct(doc: Record<string, unknown>, lang: ReturnType<typeof getLang>) {
@@ -55,7 +55,7 @@ export const getAnimalProductsByCategory = async (
       return;
     }
     const products = (category.products as unknown as Record<string, unknown>[]).map(
-      (p) => localizeDoc(p, ["name", "longDescription", "shortDescription"], lang)
+      (p) => localizeDoc(p, ["name", "description"], lang)
     );
     res.status(200).json(products);
   } catch (error) {
