@@ -1,16 +1,8 @@
 import { Router } from "express";
-import {
-  addQuestion,
-  getAllQuestion,
-  deleteAllQuestion,
-} from "../controllers/questionController";
-import { authenticateToken } from "../../../shared/middlewares/authMiddleware";
-import { isAdmin } from "../../../shared/middlewares/isAdminMiddleware";
+import { addQuestion } from "../controllers/questionController";
 
 const router = Router();
 
 router.post("/add", addQuestion);
-router.get("/", authenticateToken, isAdmin, getAllQuestion);
-router.delete("/deleteAll", authenticateToken, isAdmin, deleteAllQuestion);
 
 export default router;
