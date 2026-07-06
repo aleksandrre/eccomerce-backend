@@ -5,12 +5,14 @@ import {
   getEmailSubscribers,
   getPhoneSubscribers,
 } from "../controllers/subscriptionController";
+import { authenticateToken } from "../../../shared/middlewares/authMiddleware";
+import { isAdmin } from "../../../shared/middlewares/isAdminMiddleware";
 
 const router = Router();
 
 router.post("/email/subscribe", subscribeEmail);
-router.get("/email/subscribers", getEmailSubscribers);
 router.post("/phone/subscribe", subscribePhone);
-router.get("/phone/subscribers", getPhoneSubscribers);
+router.get("/email/subscribers", authenticateToken, isAdmin, getEmailSubscribers);
+router.get("/phone/subscribers", authenticateToken, isAdmin, getPhoneSubscribers);
 
 export default router;

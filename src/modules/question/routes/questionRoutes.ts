@@ -4,11 +4,13 @@ import {
   getAllQuestion,
   deleteAllQuestion,
 } from "../controllers/questionController";
+import { authenticateToken } from "../../../shared/middlewares/authMiddleware";
+import { isAdmin } from "../../../shared/middlewares/isAdminMiddleware";
 
 const router = Router();
 
-router.get("/", getAllQuestion);
 router.post("/add", addQuestion);
-router.delete("/deleteAll", deleteAllQuestion);
+router.get("/", authenticateToken, isAdmin, getAllQuestion);
+router.delete("/deleteAll", authenticateToken, isAdmin, deleteAllQuestion);
 
 export default router;
