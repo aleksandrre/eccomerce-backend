@@ -17,6 +17,8 @@ import animalProductRoutes from "./modules/animal/routes/animalProductRoutes";
 import foodAdminRoutes from "./modules/food/routes/foodAdminRoutes";
 import animalAdminRoutes from "./modules/animal/routes/animalAdminRoutes";
 import faqAdminRoutes from "./modules/faq/routes/faqAdminRoutes";
+import questionAdminRoutes from "./modules/question/routes/questionAdminRoutes";
+import subscriptionAdminRoutes from "./modules/subscription/routes/subscriptionAdminRoutes";
 
 // Cart & User
 import cartRoutes from "./modules/cart/routes/cartRoutes";
@@ -52,6 +54,8 @@ app.use("/products/animal", animalProductRoutes);
 app.use("/admin/food", authenticateToken, isAdmin, foodAdminRoutes);
 app.use("/admin/animal", authenticateToken, isAdmin, animalAdminRoutes);
 app.use("/admin/faq", authenticateToken, isAdmin, faqAdminRoutes);
+app.use("/admin/question", authenticateToken, isAdmin, questionAdminRoutes);
+app.use("/admin/subscription", authenticateToken, isAdmin, subscriptionAdminRoutes);
 
 // ==================== CART & USER ====================
 app.use("/cart", cartRoutes);

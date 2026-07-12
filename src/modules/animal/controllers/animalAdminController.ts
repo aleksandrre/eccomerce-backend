@@ -15,9 +15,9 @@ export const addAnimalCategory = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, geoName, description, icon, route } = req.body;
+    const { name, description, icon, route } = req.body;
 
-    if (await AnimalCategory.findOne({ name })) {
+    if (await AnimalCategory.findOne({ "name.en": name?.en })) {
       res.status(400).json({
         success: false,
         message: "ასეთი სახელის კატეგორია უკვე არსებობს",
@@ -27,7 +27,6 @@ export const addAnimalCategory = async (
 
     const category = await AnimalCategory.create({
       name,
-      geoName,
       description,
       icon,
       route,
@@ -80,8 +79,7 @@ export const addAnimalProduct = async (
     const {
       name,
       categoryId,
-      longDescription,
-      shortDescription,
+      description,
       isNewProduct,
       sale,
       price,
@@ -89,7 +87,7 @@ export const addAnimalProduct = async (
       packageWeight,
     } = req.body;
 
-    if (await AnimalProduct.findOne({ name })) {
+    if (await AnimalProduct.findOne({ "name.en": name?.en })) {
       res.status(400).json({
         success: false,
         message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
@@ -111,8 +109,7 @@ export const addAnimalProduct = async (
     const product = await AnimalProduct.create({
       name,
       category: categoryId,
-      longDescription,
-      shortDescription,
+      description,
       images,
       isNewProduct: Boolean(isNewProduct),
       sale: Number(sale) || 0,
@@ -146,8 +143,7 @@ export const updateAnimalProduct = async (
     const {
       name,
       categoryId,
-      shortDescription,
-      longDescription,
+      description,
       isNewProduct,
       sale,
       price,
@@ -163,8 +159,8 @@ export const updateAnimalProduct = async (
       return;
     }
 
-    if (name && name !== product.name) {
-      if (await AnimalProduct.findOne({ name })) {
+    if (name && name?.en !== product.name?.en) {
+      if (await AnimalProduct.findOne({ "name.en": name.en })) {
         res.status(400).json({
           success: false,
           message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
@@ -190,8 +186,7 @@ export const updateAnimalProduct = async (
       product.category = categoryId;
     }
 
-    if (shortDescription) product.shortDescription = shortDescription;
-    if (longDescription) product.longDescription = longDescription;
+    if (description) product.description = description;
     if (isNewProduct !== undefined)
       product.isNewProduct = Boolean(isNewProduct);
     if (sale !== undefined) product.sale = Number(sale);

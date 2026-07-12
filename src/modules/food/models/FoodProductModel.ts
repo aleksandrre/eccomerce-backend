@@ -14,17 +14,22 @@ export interface IFoodProductDocument
  *
  * sale/ფასდაკლება % არ არის — ფასდაკლება მხოლოდ მოცულობით.
  */
+const localizedStringSchema = {
+  en: { type: String, required: true },
+  ka: { type: String, default: "" },
+  ru: { type: String, default: "" },
+};
+
 const foodProductSchema = new Schema<IFoodProductDocument>(
   {
-    name: { type: String, required: true },
+    name: { type: localizedStringSchema, required: true },
     productType: { type: String, default: "food", immutable: true },
     category: {
       type: Schema.Types.ObjectId,
       ref: "FoodCategory",
       required: true,
     },
-    longDescription: { type: String, required: true },
-    shortDescription: { type: String, required: true },
+    description: { type: localizedStringSchema, required: true },
     images: { type: [String], required: true },
     isNewProduct: { type: Boolean, default: false },
     minKg: {

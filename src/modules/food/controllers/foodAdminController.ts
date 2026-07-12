@@ -15,9 +15,9 @@ export const addFoodCategory = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, geoName, description, icon, route } = req.body;
+    const { name, description, icon, route } = req.body;
 
-    if (await FoodCategory.findOne({ name })) {
+    if (await FoodCategory.findOne({ "name.en": name?.en })) {
       res.status(400).json({
         success: false,
         message: "ასეთი სახელის კატეგორია უკვე არსებობს",
@@ -27,7 +27,6 @@ export const addFoodCategory = async (
 
     const category = await FoodCategory.create({
       name,
-      geoName,
       description,
       icon,
       route,
@@ -80,8 +79,7 @@ export const addFoodProduct = async (
     const {
       name,
       categoryId,
-      longDescription,
-      shortDescription,
+      description,
       isNewProduct,
       minKg,
       kgThreshold,
@@ -90,7 +88,7 @@ export const addFoodProduct = async (
       quantity,
     } = req.body;
 
-    if (await FoodProduct.findOne({ name })) {
+    if (await FoodProduct.findOne({ "name.en": name?.en })) {
       res.status(400).json({
         success: false,
         message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
@@ -112,8 +110,7 @@ export const addFoodProduct = async (
     const product = await FoodProduct.create({
       name,
       category: categoryId,
-      longDescription,
-      shortDescription,
+      description,
       images,
       isNewProduct: Boolean(isNewProduct),
       minKg: Number(minKg),
@@ -148,8 +145,7 @@ export const updateFoodProduct = async (
     const {
       name,
       categoryId,
-      shortDescription,
-      longDescription,
+      description,
       isNewProduct,
       minKg,
       kgThreshold,
@@ -166,8 +162,8 @@ export const updateFoodProduct = async (
       return;
     }
 
-    if (name && name !== product.name) {
-      if (await FoodProduct.findOne({ name })) {
+    if (name && name?.en !== product.name?.en) {
+      if (await FoodProduct.findOne({ "name.en": name.en })) {
         res.status(400).json({
           success: false,
           message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
@@ -193,8 +189,7 @@ export const updateFoodProduct = async (
       product.category = categoryId;
     }
 
-    if (shortDescription) product.shortDescription = shortDescription;
-    if (longDescription) product.longDescription = longDescription;
+    if (description) product.description = description;
     if (isNewProduct !== undefined)
       product.isNewProduct = Boolean(isNewProduct);
     if (minKg !== undefined) product.minKg = Number(minKg);

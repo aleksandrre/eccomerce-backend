@@ -3,9 +3,14 @@ import { IFoodCategory } from "../../../types";
 
 export interface IFoodCategoryDocument extends Omit<IFoodCategory, "_id">, Document {}
 
+const localizedStringSchema = {
+  en: { type: String, required: true },
+  ka: { type: String, default: "" },
+  ru: { type: String, default: "" },
+};
+
 const foodCategorySchema = new Schema<IFoodCategoryDocument>({
-  name: { type: String, required: true, unique: true },
-  geoName: { type: String, required: true },
+  name: { type: localizedStringSchema, required: true },
   description: { type: String },
   icon: { type: String, required: true },
   route: { type: String, required: true },
