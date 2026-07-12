@@ -9,7 +9,7 @@ import {
 const router = Router();
 
 router.get("/categories", getAllAnimalCategories);
-router.get("/category/:categoryName", getAnimalProductsByCategory);
+router.get("/category/:slug", getAnimalProductsByCategory);
 router.get("/:id", getOneAnimalProduct);
 router.get("/", getAllAnimalProducts);
 

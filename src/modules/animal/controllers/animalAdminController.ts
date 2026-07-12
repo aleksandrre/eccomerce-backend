@@ -15,7 +15,7 @@ export const addAnimalCategory = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, description, icon, route } = req.body;
+    const { name, description, icon, slug } = req.body;
 
     if (await AnimalCategory.findOne({ "name.en": name?.en })) {
       res.status(400).json({
@@ -29,7 +29,7 @@ export const addAnimalCategory = async (
       name,
       description,
       icon,
-      route,
+      slug,
     });
     res.status(201).json({ success: true, category });
   } catch (error) {

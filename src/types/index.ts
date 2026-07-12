@@ -62,7 +62,7 @@ export interface IFoodCategory {
   name: ILocalizedString;
   description?: string;
   icon: string;
-  route: string;
+  slug: string;
   products: Types.ObjectId[];
 }
 
@@ -95,7 +95,7 @@ export interface IAnimalCategory {
   name: ILocalizedString;
   description?: string;
   icon: string;
-  route: string;
+  slug: string;
   products: Types.ObjectId[];
 }
 

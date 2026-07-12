@@ -47,7 +47,7 @@ export const getAnimalProductsByCategory = async (
   try {
     const lang = getLang(req);
     const category = await AnimalCategory.findOne({
-      "name.en": req.params.categoryName,
+      slug: req.params.slug,
     }).populate("products").lean();
 
     if (!category) {
@@ -69,7 +69,7 @@ export const getAllAnimalCategories = async (
 ): Promise<void> => {
   try {
     const lang = getLang(req);
-    const categories = await AnimalCategory.find({}, "name icon route").lean();
+    const categories = await AnimalCategory.find({}, "name icon slug").lean();
     if (!categories.length) {
       res.status(404).json({ message: "No animal categories found" });
       return;
