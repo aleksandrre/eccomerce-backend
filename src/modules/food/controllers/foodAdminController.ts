@@ -17,14 +17,6 @@ export const addFoodCategory = async (
   try {
     const { name, description, icon, slug } = req.body;
 
-    if (await FoodCategory.findOne({ "name.en": name?.en })) {
-      res.status(400).json({
-        success: false,
-        message: "ასეთი სახელის კატეგორია უკვე არსებობს",
-      });
-      return;
-    }
-
     const category = await FoodCategory.create({
       name,
       description,
@@ -87,14 +79,6 @@ export const addFoodProduct = async (
       bulkPricePerKg,
       quantity,
     } = req.body;
-
-    if (await FoodProduct.findOne({ "name.en": name?.en })) {
-      res.status(400).json({
-        success: false,
-        message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
-      });
-      return;
-    }
 
     if (!(await FoodCategory.findById(categoryId))) {
       res
@@ -162,16 +146,7 @@ export const updateFoodProduct = async (
       return;
     }
 
-    if (name && name?.en !== product.name?.en) {
-      if (await FoodProduct.findOne({ "name.en": name.en })) {
-        res.status(400).json({
-          success: false,
-          message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
-        });
-        return;
-      }
-      product.name = name;
-    }
+    if (name) product.name = name;
 
     if (categoryId && String(categoryId) !== String(product.category)) {
       if (!(await FoodCategory.findById(categoryId))) {

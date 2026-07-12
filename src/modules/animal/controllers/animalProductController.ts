@@ -46,9 +46,9 @@ export const getAnimalProductsByCategory = async (
 ): Promise<void> => {
   try {
     const lang = getLang(req);
-    const category = await AnimalCategory.findOne({
-      slug: req.params.slug,
-    }).populate("products").lean();
+    const category = await AnimalCategory.findById(req.params.categoryId)
+      .populate("products")
+      .lean();
 
     if (!category) {
       res.status(404).json({ error: "Category not found" });

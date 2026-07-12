@@ -33,10 +33,6 @@ export const addFAQType = async (
 ): Promise<void> => {
   try {
     const { questions, name, icon } = req.body;
-    if (await FAQ.findOne({ "name.en": name?.en })) {
-      res.status(400).json({ message: "FAQ type with this name already exists" });
-      return;
-    }
     const faqType = await new FAQ({ name, icon, questions }).save();
     res.status(201).json({ message: "FAQ Type added", data: faqType });
   } catch (error) {

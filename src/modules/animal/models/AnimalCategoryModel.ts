@@ -13,7 +13,7 @@ const animalCategorySchema = new Schema<IAnimalCategoryDocument>({
   name: { type: localizedStringSchema, required: true },
   description: { type: String },
   icon: { type: String, required: true },
-  slug: { type: String, required: true, unique: true },
+  slug: { type: String, required: true },
   products: [{ type: Schema.Types.ObjectId, ref: "AnimalProduct" }],
 });
 

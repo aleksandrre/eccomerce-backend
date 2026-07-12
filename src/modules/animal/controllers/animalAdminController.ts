@@ -17,14 +17,6 @@ export const addAnimalCategory = async (
   try {
     const { name, description, icon, slug } = req.body;
 
-    if (await AnimalCategory.findOne({ "name.en": name?.en })) {
-      res.status(400).json({
-        success: false,
-        message: "ასეთი სახელის კატეგორია უკვე არსებობს",
-      });
-      return;
-    }
-
     const category = await AnimalCategory.create({
       name,
       description,
@@ -86,14 +78,6 @@ export const addAnimalProduct = async (
       quantity,
       packageWeight,
     } = req.body;
-
-    if (await AnimalProduct.findOne({ "name.en": name?.en })) {
-      res.status(400).json({
-        success: false,
-        message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
-      });
-      return;
-    }
 
     if (!(await AnimalCategory.findById(categoryId))) {
       res
@@ -159,16 +143,7 @@ export const updateAnimalProduct = async (
       return;
     }
 
-    if (name && name?.en !== product.name?.en) {
-      if (await AnimalProduct.findOne({ "name.en": name.en })) {
-        res.status(400).json({
-          success: false,
-          message: "ასეთი სახელის პროდუქტი უკვე არსებობს",
-        });
-        return;
-      }
-      product.name = name;
-    }
+    if (name) product.name = name;
 
     if (categoryId && String(categoryId) !== String(product.category)) {
       if (!(await AnimalCategory.findById(categoryId))) {
