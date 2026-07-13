@@ -1,83 +1,26 @@
-import { Request, Response } from "express";
+import { createProductReadController } from "../../../shared/factories/productReadFactory";
 import { AnimalProduct } from "../models/AnimalProductModel";
 import { AnimalCategory } from "../models/AnimalCategoryModel";
-import { getLang, localizeDoc } from "../../../shared/utils/lang";
+import { computeAnimalUnitPrice } from "../../../shared/utils/pricing";
 
-const PRODUCT_FIELDS = ["name", "description", "category.name"];
-const CATEGORY_FIELDS = ["name"];
-
-function localizeProduct(doc: Record<string, unknown>, lang: ReturnType<typeof getLang>) {
-  return localizeDoc(doc, PRODUCT_FIELDS, lang);
-}
-
-export const getAllAnimalProducts = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const lang = getLang(req);
-    const products = await AnimalProduct.find().populate("category").lean();
-    res.json(products.map((p) => localizeProduct(p as Record<string, unknown>, lang)));
-  } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+// `.lean()` strips the discountedPrice virtual, so add it back for the client.
+const withDiscountedPrice = (doc: Record<string, unknown>) => {
+  if (typeof doc.price === "number" && typeof doc.sale === "number") {
+    doc.discountedPrice = computeAnimalUnitPrice({
+      price: doc.price,
+      sale: doc.sale,
+    });
   }
+  return doc;
 };
 
-export const getOneAnimalProduct = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const lang = getLang(req);
-    const product = await AnimalProduct.findById(req.params.id).populate("category").lean();
-    if (!product) {
-      res.status(404).json({ error: "Product not found" });
-      return;
-    }
-    res.json(localizeProduct(product as Record<string, unknown>, lang));
-  } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+const controller = createProductReadController(
+  AnimalProduct,
+  AnimalCategory,
+  withDiscountedPrice
+);
 
-export const getAnimalProductsByCategory = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const lang = getLang(req);
-    const category = await AnimalCategory.findById(req.params.categoryId)
-      .populate("products")
-      .lean();
-
-    if (!category) {
-      res.status(404).json({ error: "Category not found" });
-      return;
-    }
-    const products = (category.products as unknown as Record<string, unknown>[]).map(
-      (p) => localizeDoc(p, ["name", "description"], lang)
-    );
-    res.status(200).json(products);
-  } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-export const getAllAnimalCategories = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const lang = getLang(req);
-    const categories = await AnimalCategory.find({}, "name icon slug").lean();
-    if (!categories.length) {
-      res.status(404).json({ message: "No animal categories found" });
-      return;
-    }
-    res.status(200).json(
-      categories.map((c) => localizeDoc(c as Record<string, unknown>, CATEGORY_FIELDS, lang))
-    );
-  } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+export const getAllAnimalProducts = controller.getAllProducts;
+export const getOneAnimalProduct = controller.getOneProduct;
+export const getAnimalProductsByCategory = controller.getProductsByCategory;
+export const getAllAnimalCategories = controller.getAllCategories;

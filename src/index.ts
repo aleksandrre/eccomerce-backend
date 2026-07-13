@@ -5,6 +5,9 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 
+// Validated environment config (fails fast if a required var is missing).
+import { env } from "./shared/config/env";
+
 // Auth
 import authRoutes from "./modules/auth/routes/authRoutes";
 import emailRoutes from "./modules/auth/routes/emailRoutes";
@@ -29,13 +32,10 @@ import faqRoutes from "./modules/faq/routes/faqRoutes";
 import questionRoutes from "./modules/question/routes/questionRoutes";
 import subscriptionRoutes from "./modules/subscription/routes/subscriptionRoutes";
 
-import {
-  authenticateToken,
-} from "./shared/middlewares/authMiddleware";
+import { authenticateToken } from "./shared/middlewares/authMiddleware";
 import { isAdmin } from "./shared/middlewares/isAdminMiddleware";
-
-const PORT = process.env.PORT || 3001;
-const MONGODB_URI = process.env.MONGODB_URI as string;
+import { notFoundHandler } from "./shared/middlewares/notFoundHandler";
+import { errorHandler } from "./shared/middlewares/errorHandler";
 
 const app = express();
 
@@ -55,7 +55,12 @@ app.use("/admin/food", authenticateToken, isAdmin, foodAdminRoutes);
 app.use("/admin/animal", authenticateToken, isAdmin, animalAdminRoutes);
 app.use("/admin/faq", authenticateToken, isAdmin, faqAdminRoutes);
 app.use("/admin/question", authenticateToken, isAdmin, questionAdminRoutes);
-app.use("/admin/subscription", authenticateToken, isAdmin, subscriptionAdminRoutes);
+app.use(
+  "/admin/subscription",
+  authenticateToken,
+  isAdmin,
+  subscriptionAdminRoutes
+);
 
 // ==================== CART & USER ====================
 app.use("/cart", cartRoutes);
@@ -66,13 +71,17 @@ app.use("/faq", faqRoutes);
 app.use("/question", questionRoutes);
 app.use("/subscription", subscriptionRoutes);
 
+// ==================== ERROR HANDLING (must be last) ====================
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 // ==================== DB ====================
 mongoose
-  .connect(MONGODB_URI)
+  .connect(env.MONGODB_URI)
   .then(() => {
     console.log("Successfully connected to MongoDB");
-    app.listen(PORT, () =>
-      console.log(`App is listening on port ${PORT}`)
+    app.listen(env.PORT, () =>
+      console.log(`App is listening on port ${env.PORT}`)
     );
   })
   .catch((error: Error) =>

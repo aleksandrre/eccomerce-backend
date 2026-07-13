@@ -50,9 +50,6 @@ export interface IUser {
   resetTokenExpires?: Date;
   cart: ICartItem[];
   createdAt: Date;
-  cartTotal: number;
-  cartOriginalTotal: number;
-  cartSavings: number;
 }
 
 // ==================== FOOD ====================

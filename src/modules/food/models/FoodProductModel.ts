@@ -1,25 +1,20 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import { IFoodProduct } from "../../../types";
+import { localizedStringSchema } from "../../../shared/models/localizedStringSchema";
 
 export interface IFoodProductDocument
   extends Omit<IFoodProduct, "_id">,
     Document {}
 
 /**
- * FoodProduct — საკვები პროდუქტი კილოგრამებში.
+ * FoodProduct — food sold by the kilogram.
  *
- * ფასი ავტომატურად განისაზღვრება შეკვეთის მოცულობის მიხედვით:
- *   quantity < kgThreshold  → pricePerKg  (ჩვეულებრივი ფასი)
- *   quantity >= kgThreshold → bulkPricePerKg (ბირთვული/დაბალი ფასი)
+ * Price is derived from the ordered quantity (see shared/utils/pricing.ts):
+ *   quantity <  kgThreshold → pricePerKg      (normal)
+ *   quantity >= kgThreshold → bulkPricePerKg  (bulk / lower)
  *
- * sale/ფასდაკლება % არ არის — ფასდაკლება მხოლოდ მოცულობით.
+ * There is no percentage sale for food — the discount is volume-based only.
  */
-const localizedStringSchema = {
-  en: { type: String, required: true },
-  ka: { type: String, default: "" },
-  ru: { type: String, default: "" },
-};
-
 const foodProductSchema = new Schema<IFoodProductDocument>(
   {
     name: { type: localizedStringSchema, required: true },
@@ -36,31 +31,31 @@ const foodProductSchema = new Schema<IFoodProductDocument>(
       type: Number,
       required: true,
       min: 0,
-      comment: "მინიმალური შეკვეთის კგ (მაგ. 0.5)",
+      comment: "Minimum order in kg (e.g. 0.5)",
     },
     kgThreshold: {
       type: Number,
       required: true,
       min: 0,
-      comment: "ზღვარი ბულკ-ფასზე გადასასვლელად (მაგ. 10)",
+      comment: "Quantity at/above which bulk price applies (e.g. 10)",
     },
     pricePerKg: {
       type: Number,
       required: true,
       min: 0,
-      comment: "ფასი კგ-ზე kgThreshold-ზე ნაკლები შეკვეთისთვის",
+      comment: "Price per kg when quantity < kgThreshold",
     },
     bulkPricePerKg: {
       type: Number,
       required: true,
       min: 0,
-      comment: "ფასი კგ-ზე kgThreshold-ის ან მეტი შეკვეთისთვის (დაბალი)",
+      comment: "Price per kg when quantity >= kgThreshold (lower)",
     },
     quantity: {
       type: Number,
       required: true,
       min: 0,
-      comment: "მარაგი კილოგრამებში",
+      comment: "Stock in kilograms",
     },
   },
   {

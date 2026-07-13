@@ -12,8 +12,7 @@ const questionSchema = new Schema<IQuestionDocument>(
       validate: {
         validator: (v: string) =>
           /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v),
-        message: (p: { value: string }) =>
-          `${p.value} არ არის სწორი email მისამართი!`,
+        message: (p: { value: string }) => `${p.value} is not a valid email`,
       },
     },
     title: { type: String },

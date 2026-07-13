@@ -6,124 +6,141 @@ import {
   sendVerificationEmail,
   sendPasswordResetEmail,
 } from "../../../shared/utils/emailUtils";
+import { AppError } from "../../../shared/errors/AppError";
+import { ErrorCode } from "../../../shared/errors/errorCodes";
+import { sendSuccess } from "../../../shared/utils/apiResponse";
+import {
+  requireFields,
+  assertValidEmail,
+  assertStrongPassword,
+} from "../../../shared/utils/validators";
+
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export const registerUser = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const { name, lastName, password, email, number } = req.body;
+  const { name, lastName, password, email, number } = req.body;
 
-    if (req.body.isAdmin) {
-      res.status(400).json({ message: "Cannot register as admin" });
-      return;
-    }
-    if (await User.findOne({ email })) {
-      res.status(400).json({ message: "Email already exists" });
-      return;
-    }
-    if (await User.findOne({ number })) {
-      res.status(400).json({ message: "Number already in use" });
-      return;
-    }
+  requireFields(req.body, [
+    "name",
+    "lastName",
+    "password",
+    "email",
+    "number",
+  ]);
+  assertValidEmail(email);
+  assertStrongPassword(password);
 
-    const emailVerificationToken = crypto.randomBytes(20).toString("hex");
-    const newUser = new User({
-      name,
-      lastName,
-      password: await bcrypt.hash(password, 10),
-      email,
-      number,
-      emailVerificationToken,
-      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
-    await newUser.save();
-    await sendVerificationEmail(newUser);
-
-    res.status(201).json({
-      message: "Registered successfully. Check your email for verification.",
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+  if (await User.findOne({ email })) {
+    throw AppError.conflict(ErrorCode.EMAIL_EXISTS, "Email already exists");
   }
+  if (await User.findOne({ number })) {
+    throw AppError.conflict(ErrorCode.NUMBER_EXISTS, "Number already in use");
+  }
+
+  const emailVerificationToken = crypto.randomBytes(20).toString("hex");
+  const newUser = new User({
+    name,
+    lastName,
+    password: await bcrypt.hash(password, 10),
+    email,
+    number,
+    emailVerificationToken,
+    emailVerificationExpires: new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+  });
+
+  await newUser.save();
+  await sendVerificationEmail(newUser);
+
+  sendSuccess(
+    res,
+    null,
+    "Registered successfully. Check your email for verification.",
+    201
+  );
 };
 
 export const verifyEmail = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const user = await User.findOne({
-      emailVerificationToken: req.params.token,
-      emailVerificationExpires: { $gt: new Date() },
-    });
+  const user = await User.findOne({
+    emailVerificationToken: req.params.token,
+    emailVerificationExpires: { $gt: new Date() },
+  });
 
-    if (!user) {
-      res.status(400).json({ message: "Invalid or expired token" });
-      return;
-    }
-
-    user.emailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save();
-
-    res.status(200).json({ message: "Email verified successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+  if (!user) {
+    throw AppError.badRequest(
+      ErrorCode.TOKEN_INVALID,
+      "Invalid or expired verification token"
+    );
   }
+
+  user.emailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save();
+
+  sendSuccess(res, null, "Email verified successfully");
 };
 
 export const forgotPassword = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    const user = await User.findOneAndUpdate(
-      { email: req.body.email },
-      {
-        resetToken,
-        resetTokenExpires: new Date(Date.now() + 3600000),
-      },
-      { new: true }
-    );
+  const { email } = req.body;
+  requireFields(req.body, ["email"]);
 
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  const user = await User.findOneAndUpdate(
+    { email },
+    {
+      resetToken,
+      resetTokenExpires: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+    },
+    { new: true }
+  );
 
+  // Send the email only if the account exists, but always return the same
+  // generic response so accounts can't be enumerated via this endpoint.
+  if (user) {
     await sendPasswordResetEmail(user);
-    res.status(200).json({ message: "Password reset instructions sent" });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
   }
+
+  sendSuccess(
+    res,
+    null,
+    "If an account with that email exists, password reset instructions have been sent."
+  );
 };
 
 export const resetPassword = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const user = await User.findOne({
-      resetToken: req.params.token,
-      resetTokenExpires: { $gt: new Date() },
-    });
+  const { newPassword } = req.body;
+  requireFields(req.body, ["newPassword"]);
+  assertStrongPassword(newPassword);
 
-    if (!user) {
-      res.status(400).json({ message: "Invalid or expired token" });
-      return;
-    }
+  const user = await User.findOne({
+    resetToken: req.params.token,
+    resetTokenExpires: { $gt: new Date() },
+  });
 
-    user.password = await bcrypt.hash(req.body.newPassword, 10);
-    user.resetToken = undefined;
-    user.resetTokenExpires = undefined;
-    await user.save();
-
-    res.status(200).json({ message: "Password reset successful" });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+  if (!user) {
+    throw AppError.badRequest(
+      ErrorCode.TOKEN_INVALID,
+      "Invalid or expired reset token"
+    );
   }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  user.resetToken = undefined;
+  user.resetTokenExpires = undefined;
+  await user.save();
+
+  sendSuccess(res, null, "Password reset successful");
 };

@@ -5,13 +5,14 @@ import {
   getOneFoodProduct,
   getAllFoodProducts,
 } from "../controllers/foodProductController";
+import { asyncHandler } from "../../../shared/utils/asyncHandler";
 
 const router = Router();
 
-// სპეციფიკური route-ები /:id -ზე ადრე
-router.get("/categories", getAllFoodCategories);
-router.get("/category/:categoryId", getFoodProductsByCategory);
-router.get("/:id", getOneFoodProduct);
-router.get("/", getAllFoodProducts);
+// Specific routes must be declared before the "/:id" catch-all.
+router.get("/categories", asyncHandler(getAllFoodCategories));
+router.get("/category/:categoryId", asyncHandler(getFoodProductsByCategory));
+router.get("/:id", asyncHandler(getOneFoodProduct));
+router.get("/", asyncHandler(getAllFoodProducts));
 
 export default router;

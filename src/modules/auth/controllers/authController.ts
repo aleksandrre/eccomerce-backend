@@ -8,132 +8,129 @@ import {
   generateRefreshToken,
 } from "../../../shared/utils/authUtils";
 import { AuthRequest, JwtPayload } from "../../../types";
+import { AppError } from "../../../shared/errors/AppError";
+import { ErrorCode } from "../../../shared/errors/errorCodes";
+import { sendSuccess } from "../../../shared/utils/apiResponse";
+import {
+  requireFields,
+  assertStrongPassword,
+} from "../../../shared/utils/validators";
+import { env } from "../../../shared/config/env";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
+  requireFields(req.body, ["email", "password"]);
 
-    const user = await User.findOne({ email });
-    if (!user || !user.emailVerified) {
-      res.status(401).json({ message: "Invalid credentials" });
-      return;
-    }
-
-    if (!(await bcrypt.compare(password, user.password))) {
-      res.status(401).json({ message: "Invalid credentials" });
-      return;
-    }
-
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
-    await new RefreshToken({ token: refreshToken, userId: user._id }).save();
-
-    res.json({ accessToken, refreshToken });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+  // Password is select:false, so request it explicitly for the comparison.
+  const user = await User.findOne({ email }).select("+password");
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw AppError.unauthorized(
+      ErrorCode.INVALID_CREDENTIALS,
+      "Invalid email or password"
+    );
   }
+  if (!user.emailVerified) {
+    throw AppError.unauthorized(
+      ErrorCode.EMAIL_NOT_VERIFIED,
+      "Please verify your email before logging in"
+    );
+  }
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+  await RefreshToken.create({ token: refreshToken, userId: user._id });
+
+  sendSuccess(res, { accessToken, refreshToken }, "Login successful");
 };
 
 export const token = async (req: Request, res: Response): Promise<void> => {
   const refreshToken = req.body.token as string | undefined;
   if (!refreshToken) {
-    res.status(401).send("Refresh token missing");
-    return;
+    throw AppError.unauthorized(
+      ErrorCode.TOKEN_MISSING,
+      "Refresh token is missing"
+    );
   }
 
   const exists = await RefreshToken.findOne({ token: refreshToken });
   if (!exists) {
-    res.status(403).json({ message: "Invalid refresh token" });
-    return;
+    throw AppError.forbidden(
+      ErrorCode.TOKEN_INVALID,
+      "Invalid refresh token"
+    );
   }
 
-  jwt.verify(
-    refreshToken,
-    process.env.REFRESH_TOKEN_SECRET as string,
-    (err, decoded) => {
-      if (err) {
-        res.sendStatus(403);
-        return;
-      }
-      res.json({ accessToken: generateAccessToken(decoded as JwtPayload) });
-    }
+  let decoded: JwtPayload;
+  try {
+    decoded = jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET) as JwtPayload;
+  } catch {
+    throw AppError.forbidden(
+      ErrorCode.TOKEN_INVALID,
+      "Refresh token verification failed"
+    );
+  }
+
+  sendSuccess(
+    res,
+    { accessToken: generateAccessToken(decoded) },
+    "Access token refreshed"
   );
 };
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const refreshToken = req.body.token as string | undefined;
-    if (!refreshToken) {
-      res.status(401).json({ message: "Refresh token missing" });
-      return;
-    }
-
-    const deleted = await RefreshToken.findOneAndDelete({
-      token: refreshToken,
-    });
-    if (!deleted) {
-      res.status(403).json({ message: "Invalid refresh token" });
-      return;
-    }
-
-    res.status(200).json({ message: "Logout successful" });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+  const refreshToken = req.body.token as string | undefined;
+  if (!refreshToken) {
+    throw AppError.unauthorized(
+      ErrorCode.TOKEN_MISSING,
+      "Refresh token is missing"
+    );
   }
+
+  const deleted = await RefreshToken.findOneAndDelete({ token: refreshToken });
+  if (!deleted) {
+    throw AppError.forbidden(
+      ErrorCode.TOKEN_INVALID,
+      "Invalid refresh token"
+    );
+  }
+
+  sendSuccess(res, null, "Logout successful");
 };
 
 export const changePassword = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
-  try {
-    const { oldPassword, newPassword, newPasswordRepeat } = req.body;
+  const { oldPassword, newPassword, newPasswordRepeat } = req.body;
+  requireFields(req.body, ["oldPassword", "newPassword", "newPasswordRepeat"]);
 
-    if (!oldPassword || !newPassword || !newPasswordRepeat) {
-      res
-        .status(400)
-        .json({ message: "გთხოვთ, შეიყვანოთ ძველი და ახალი პაროლი" });
-      return;
-    }
-    if (oldPassword === newPassword) {
-      res
-        .status(400)
-        .json({ message: "ახალი პაროლი უნდა განსხვავდებოდეს ძველისგან" });
-      return;
-    }
-    if (newPassword !== newPasswordRepeat) {
-      res
-        .status(400)
-        .json({ message: "შეყვანილი პაროლები არ ემთხვევა ერთმანეთს" });
-      return;
-    }
-
-    const passwordRegex =
-      /^[A-Z](?=.*\d)(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{7,24}$/;
-    if (!passwordRegex.test(newPassword)) {
-      res.status(400).json({
-        message:
-          "პაროლი: მინ. 8 სიმბოლო, პირველი დიდი ასო, მინიმუმ 1 ციფრი და სპეც. სიმბოლო",
-      });
-      return;
-    }
-
-    const user = await User.findById(req.user?.id);
-    if (!user) {
-      res.status(404).json({ message: "მომხმარებელი ვერ მოიძებნა" });
-      return;
-    }
-
-    if (!(await bcrypt.compare(oldPassword, user.password))) {
-      res.status(400).json({ message: "ძველი პაროლი არასწორია" });
-      return;
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    res.status(200).json({ message: "პაროლი წარმატებით განახლდა" });
-  } catch (error) {
-    res.status(500).json({ message: "სერვერზე შეცდომა" });
+  if (oldPassword === newPassword) {
+    throw AppError.badRequest(
+      ErrorCode.SAME_PASSWORD,
+      "New password must be different from the old password"
+    );
   }
+  if (newPassword !== newPasswordRepeat) {
+    throw AppError.badRequest(
+      ErrorCode.PASSWORDS_DO_NOT_MATCH,
+      "New passwords do not match"
+    );
+  }
+  assertStrongPassword(newPassword);
+
+  const user = await User.findById(req.user?.id).select("+password");
+  if (!user) {
+    throw AppError.notFound(ErrorCode.NOT_FOUND, "User not found");
+  }
+  if (!(await bcrypt.compare(oldPassword, user.password))) {
+    throw AppError.badRequest(
+      ErrorCode.INCORRECT_OLD_PASSWORD,
+      "Old password is incorrect"
+    );
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  sendSuccess(res, null, "Password updated successfully");
 };

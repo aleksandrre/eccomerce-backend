@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import { IAnimalProduct } from "../../../types";
+import { localizedStringSchema } from "../../../shared/models/localizedStringSchema";
 
 export interface IAnimalProductDocument
   extends Omit<IAnimalProduct, "_id" | "discountedPrice">,
@@ -8,19 +9,13 @@ export interface IAnimalProductDocument
 }
 
 /**
- * AnimalProduct — ცხოველის საჭმელი (დაფასოებული პაკეტი).
+ * AnimalProduct — packaged animal food (sold per package).
  *
- * quantity = პაკეტების რაოდენობა მარაგში.
- * packageWeight = პაკეტის წონის აღწერა (მაგ. "400გ", "1კგ") — display only.
- * sale = ფასდაკლება %-ში (0-100).
+ * quantity      = number of packages in stock.
+ * packageWeight = display-only weight label (e.g. "400g", "1kg").
+ * sale          = discount percentage (0-100).
  * discountedPrice (virtual) = price * (1 - sale/100).
  */
-const localizedStringSchema = {
-  en: { type: String, required: true },
-  ka: { type: String, default: "" },
-  ru: { type: String, default: "" },
-};
-
 const animalProductSchema = new Schema<IAnimalProductDocument>(
   {
     name: { type: localizedStringSchema, required: true },
@@ -49,12 +44,12 @@ const animalProductSchema = new Schema<IAnimalProductDocument>(
       type: Number,
       required: true,
       min: 0,
-      comment: "პაკეტების რაოდენობა მარაგში",
+      comment: "Number of packages in stock",
     },
     packageWeight: {
       type: String,
       required: true,
-      comment: "მაგ: '400გ', '1კგ', '2კგ'",
+      comment: "Display label, e.g. '400g', '1kg', '2kg'",
     },
   },
   {

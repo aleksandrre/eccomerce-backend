@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import { IFaq, IFaqQuestion } from "../../../types";
+import { localizedStringSchema } from "../../../shared/models/localizedStringSchema";
 
 export interface IFaqQuestionDocument
   extends Omit<IFaqQuestion, "_id">,
@@ -10,12 +11,6 @@ export interface IFaqDocument
     Document {
   questions: IFaqQuestionDocument[];
 }
-
-const localizedStringSchema = {
-  en: { type: String, required: true },
-  ka: { type: String, default: "" },
-  ru: { type: String, default: "" },
-};
 
 const faqQuestionSchema = new Schema<IFaqQuestionDocument>({
   question: { type: localizedStringSchema, required: true },

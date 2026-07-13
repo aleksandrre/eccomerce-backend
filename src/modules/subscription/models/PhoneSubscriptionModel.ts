@@ -8,13 +8,13 @@ export interface IPhoneSubscriptionDocument
 const phoneSubscriptionSchema = new Schema<IPhoneSubscriptionDocument>({
   phoneNumber: {
     type: String,
-    required: [true, "ტელეფონის ნომერი სავალდებულოა"],
+    required: [true, "Phone number is required"],
     unique: true,
     trim: true,
     validate: {
       validator: (v: string) => /^5\d{8}$/.test(v),
       message: (p: { value: string }) =>
-        `${p.value} არ არის სწორი ნომერი! (5xxxxxxxx)`,
+        `${p.value} is not a valid phone number (format: 5xxxxxxxx)`,
     },
   },
   subscriptionDate: { type: Date, default: Date.now },

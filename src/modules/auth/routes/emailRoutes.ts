@@ -5,12 +5,13 @@ import {
   forgotPassword,
   resetPassword,
 } from "../controllers/emailController";
+import { asyncHandler } from "../../../shared/utils/asyncHandler";
 
 const router = Router();
 
-router.post("/registration", registerUser);
-router.get("/verify/:token", verifyEmail);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password/:token", resetPassword);
+router.post("/registration", asyncHandler(registerUser));
+router.get("/verify/:token", asyncHandler(verifyEmail));
+router.post("/forgot-password", asyncHandler(forgotPassword));
+router.post("/reset-password/:token", asyncHandler(resetPassword));
 
 export default router;
