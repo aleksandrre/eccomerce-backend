@@ -8,14 +8,15 @@ import { parseNumber } from "../../../shared/utils/validators";
 
 const categoryController = createCategoryAdminController(
   FoodCategory,
-  FoodProduct
+  FoodProduct,
+  "food"
 );
 export const addFoodCategory = categoryController.addCategory;
 export const deleteFoodCategory = categoryController.deleteCategory;
 
 // ==================== PRODUCTS ====================
 
-const productController = createProductAdminController(FoodProduct, FoodCategory, {
+const productController = createProductAdminController(FoodProduct, FoodCategory, "food", {
   buildCreateFields: (body) => ({
     minKg: parseNumber(body.minKg, "minKg", { min: 0 }),
     kgThreshold: parseNumber(body.kgThreshold, "kgThreshold", { min: 0 }),

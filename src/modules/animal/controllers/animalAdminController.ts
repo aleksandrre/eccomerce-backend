@@ -8,7 +8,8 @@ import { parseNumber } from "../../../shared/utils/validators";
 
 const categoryController = createCategoryAdminController(
   AnimalCategory,
-  AnimalProduct
+  AnimalProduct,
+  "animal"
 );
 export const addAnimalCategory = categoryController.addCategory;
 export const deleteAnimalCategory = categoryController.deleteCategory;
@@ -18,6 +19,7 @@ export const deleteAnimalCategory = categoryController.deleteCategory;
 const productController = createProductAdminController(
   AnimalProduct,
   AnimalCategory,
+  "animal",
   {
     buildCreateFields: (body) => ({
       sale:

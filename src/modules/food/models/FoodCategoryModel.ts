@@ -7,7 +7,7 @@ export interface IFoodCategoryDocument extends Omit<IFoodCategory, "_id">, Docum
 const foodCategorySchema = new Schema<IFoodCategoryDocument>({
   name: { type: localizedStringSchema, required: true },
   description: { type: String },
-  icon: { type: String, required: true },
+  image: { type: String, required: true },
   slug: { type: String, required: true },
   products: [{ type: Schema.Types.ObjectId, ref: "FoodProduct" }],
 });

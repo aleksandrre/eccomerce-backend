@@ -74,7 +74,7 @@ export function createProductReadController(
     res: Response
   ): Promise<void> => {
     const lang = getLang(req);
-    const categories = await CategoryModel.find({}, "name icon slug").lean();
+    const categories = await CategoryModel.find({}, "name image slug").lean();
     sendSuccess(
       res,
       categories.map((c) => localizeDoc(c as Lean, CATEGORY_FIELDS, lang))

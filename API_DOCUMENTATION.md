@@ -219,9 +219,9 @@ Query param for all: `?lang=en|ka|ru` (default `en`).
   "_id": "665...",
   "name": "Chicken Kibble",
   "productType": "food",
-  "category": { "_id": "663...", "name": "Dry Food", "icon": "...", "slug": "dry-food", "products": ["..."] },
+  "category": { "_id": "663...", "name": "Dry Food", "image": "...", "slug": "dry-food", "products": ["..."] },
   "description": "High-protein dry food",
-  "images": ["uploads/uuid-a.jpg"],
+  "images": ["products/food/665.../uuid-a.jpg"],
   "isNewProduct": false,
   "minKg": 0.5,
   "kgThreshold": 10,
@@ -232,9 +232,9 @@ Query param for all: `?lang=en|ka|ru` (default `en`).
 ```
 
 ### `GET /products/food/categories`
-List food categories (id, localized name, icon, slug).
+List food categories (id, localized name, image, slug).
 
-**Success `200`:** `{ "success": true, "data": [ { "_id": "...", "name": "Dry Food", "icon": "...", "slug": "dry-food" } ], "message": "OK" }` (empty → `data: []`).
+**Success `200`:** `{ "success": true, "data": [ { "_id": "...", "name": "Dry Food", "image": "...", "slug": "dry-food" } ], "message": "OK" }` (empty → `data: []`).
 
 ### `GET /products/food/category/:categoryId`
 Products within a category (localized `name`/`description`).
@@ -259,9 +259,9 @@ Identical route shape to food. Query param `?lang`.
   "_id": "667...",
   "name": "Salmon Treats",
   "productType": "animal",
-  "category": { "_id": "664...", "name": "Treats", "icon": "...", "slug": "treats", "products": ["..."] },
+  "category": { "_id": "664...", "name": "Treats", "image": "...", "slug": "treats", "products": ["..."] },
   "description": "Grain-free treats",
-  "images": ["uploads/uuid-b.jpg"],
+  "images": ["products/animal/667.../uuid-b.jpg"],
   "isNewProduct": true,
   "sale": 20,
   "price": 15,
@@ -285,21 +285,17 @@ Responses mirror the food endpoints.
 All routes require: `Authorization: Bearer <accessToken>` **and** `isAdmin: true`. Common errors on every route: `401 TOKEN_MISSING/TOKEN_INVALID`, `403 FORBIDDEN`.
 
 ### `POST /admin/food/categories`
-JSON body.
+**`multipart/form-data`.** The category image is sent as a single file under field name **`file`** and is uploaded to `categories/food/`; the returned S3 key is stored in `image`. Localized `name` is sent as a **JSON string**.
 
-| Field | Type | Required |
-|---|---|---|
-| `name` | `{ en, ka, ru }` (object; `en` required) | ✅ |
-| `icon` | string | ✅ |
-| `slug` | string | ✅ |
-| `description` | string | optional |
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `file` | file | ✅ | image/jpeg,png,webp,gif; ≤5MB |
+| `name` | JSON string | ✅ | `'{"en":"..","ka":"..","ru":".."}'` |
+| `slug` | string | ✅ | |
+| `description` | string | optional | |
 
-**Example**
-```json
-{ "name": { "en": "Dry Food", "ka": "მშრალი", "ru": "Сухой" }, "icon": "dry.svg", "slug": "dry-food" }
-```
-**Success `201`:** `{ "success": true, "data": { "category": { ... } }, "message": "Category created successfully" }`
-**Errors:** `400 VALIDATION_ERROR`.
+**Success `201`:** `{ "success": true, "data": { "category": { ... } }, "message": "Category created successfully" }` (the saved doc's `image` holds the S3 key, e.g. `categories/food/uuid-dry.jpg`).
+**Errors:** `400 VALIDATION_ERROR` (missing image, bad JSON, bad file type).
 
 ### `DELETE /admin/food/categories/:categoryId`
 > ⚠️ **DESTRUCTIVE & IRREVERSIBLE — CASCADING DELETE.** This deletes the category **and every FoodProduct in it** (and those products' S3 images). The UI **must** show a confirmation warning before calling this, e.g. *"This will delete the category and all products in it — are you sure?"*
@@ -371,7 +367,7 @@ All fields optional; same image-replacement and category-move behavior as food.
 Same as food.
 
 ### Categories
-- `POST /admin/animal/categories` — body `{ name:{en,ka,ru}, icon, slug, description? }`
+- `POST /admin/animal/categories` — **`multipart/form-data`**, identical to the food version: image file under field **`file`** (uploaded to `categories/animal/`), `name` as a JSON string, plus `slug` and optional `description`.
 - `DELETE /admin/animal/categories/:categoryId` — ⚠️ **DESTRUCTIVE cascading delete**, identical behavior to the food version above: removes the category **and every AnimalProduct in it** (plus their S3 images), atomically. Responds `data: { "deletedProductsCount": N }`, message `"Category and N product(s) deleted successfully"`. The UI must show a confirmation warning. **Errors:** `404 CATEGORY_NOT_FOUND`.
 
 ---

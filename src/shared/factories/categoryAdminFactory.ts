@@ -1,19 +1,22 @@
 import { Response } from "express";
 import mongoose, { Model } from "mongoose";
-import { AuthRequest } from "../../types";
+import { AuthRequest, ProductType } from "../../types";
+import configureMulter from "../services/configureMulter";
 import { sendSuccess } from "../utils/apiResponse";
 import { AppError } from "../errors/AppError";
 import { ErrorCode } from "../errors/errorCodes";
 import { requireFields, parseLocalizedField } from "../utils/validators";
-import { deleteFilesFromS3 } from "../services/s3Service";
+import { uploadCategoryImage, deleteFilesFromS3 } from "../services/s3Service";
 
 /**
  * Category admin endpoints (create/delete) are identical for Food and Animal,
- * so they're generated here. Categories are created via JSON (no file upload),
- * so `name` arrives as an object; `parseLocalizedField` validates it either way.
+ * so they're generated here. Create is multipart: the image arrives as a file
+ * (field `file`) and is uploaded to `categories/<type>/`; the localized `name`
+ * arrives as a JSON string and is validated by `parseLocalizedField`.
  *
  * deleteCategory is a CASCADING, destructive action: it removes the category
- * AND every product that belongs to it (plus those products' S3 images).
+ * AND every product that belongs to it (plus the category's own image and all
+ * those products' S3 images).
  */
 
 /** Detects the "transactions not supported" error on standalone MongoDB. */
@@ -64,21 +67,33 @@ async function deleteCategoryAndProducts(
 
 export function createCategoryAdminController(
   CategoryModel: Model<any>,
-  ProductModel: Model<any>
+  ProductModel: Model<any>,
+  categoryType: ProductType
 ) {
   const addCategory = async (
     req: AuthRequest,
     res: Response
   ): Promise<void> => {
+    await configureMulter(1)(req, res);
     const body = req.body as Record<string, unknown>;
-    requireFields(body, ["name", "icon", "slug"]);
+    requireFields(body, ["name", "slug"]);
     const name = parseLocalizedField(body.name, "name");
+
+    if (!req.file) {
+      throw AppError.badRequest(
+        ErrorCode.VALIDATION_ERROR,
+        "Category image is required"
+      );
+    }
+
+    // Validate everything before touching S3 (no orphaned files on failure).
+    const image = await uploadCategoryImage(categoryType, req.file);
 
     const category = await CategoryModel.create({
       name,
       description:
         typeof body.description === "string" ? body.description : undefined,
-      icon: body.icon,
+      image,
       slug: body.slug,
     });
 
@@ -104,13 +119,15 @@ export function createCategoryAdminController(
       );
     }
 
-    // Collect image keys BEFORE deleting so we can clean up S3 afterwards.
+    // Collect image keys BEFORE deleting so we can clean up S3 afterwards: the
+    // category's own image plus every image of every product in it.
     const products = await ProductModel.find({ category: categoryId }).select(
       "images"
     );
-    const productImages = products.flatMap(
-      (p) => (p.images as string[] | undefined) ?? []
-    );
+    const imagesToDelete = [
+      ...(category.image ? [category.image as string] : []),
+      ...products.flatMap((p) => (p.images as string[] | undefined) ?? []),
+    ];
 
     // Delete products + category from the database (atomic where supported).
     const deletedProductsCount = await deleteCategoryAndProducts(
@@ -121,9 +138,9 @@ export function createCategoryAdminController(
 
     // DB is now consistent — clean up S3 images best-effort (orphaned files
     // are harmless storage waste and must not fail an already-committed delete).
-    if (productImages.length > 0) {
+    if (imagesToDelete.length > 0) {
       try {
-        await deleteFilesFromS3(productImages);
+        await deleteFilesFromS3(imagesToDelete);
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error("[cascade delete] S3 image cleanup failed:", e);

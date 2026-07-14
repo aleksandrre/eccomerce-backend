@@ -1,10 +1,10 @@
 import { Response } from "express";
-import { Model } from "mongoose";
-import { AuthRequest } from "../../types";
+import mongoose, { Model } from "mongoose";
+import { AuthRequest, ProductType } from "../../types";
 import configureMulter from "../services/configureMulter";
 import {
-  uploadFilesToS3,
-  deleteFilesFromS3,
+  uploadProductImages,
+  deleteProductImages,
 } from "../services/s3Service";
 import { sendSuccess } from "../utils/apiResponse";
 import { AppError } from "../errors/AppError";
@@ -35,6 +35,7 @@ interface ProductAdminConfig {
 export function createProductAdminController(
   ProductModel: Model<any>,
   CategoryModel: Model<any>,
+  productType: ProductType,
   config: ProductAdminConfig
 ) {
   const parseBoolean = (v: unknown): boolean => v === true || v === "true";
@@ -67,16 +68,32 @@ export function createProductAdminController(
     const description = parseLocalizedField(body.description, "description");
     const typeFields = config.buildCreateFields(body);
 
-    const images = await uploadFilesToS3(files);
+    // Pre-generate the id so all images land under this product's prefix
+    // (products/<type>/<productId>/) before the document is inserted.
+    const productId = new mongoose.Types.ObjectId();
+    const images = await uploadProductImages(
+      productType,
+      productId.toString(),
+      files
+    );
 
-    const product = await ProductModel.create({
-      name,
-      description,
-      category: categoryId,
-      images,
-      isNewProduct: parseBoolean(body.isNewProduct),
-      ...typeFields,
-    });
+    let product;
+    try {
+      product = await ProductModel.create({
+        _id: productId,
+        name,
+        description,
+        category: categoryId,
+        images,
+        isNewProduct: parseBoolean(body.isNewProduct),
+        ...typeFields,
+      });
+    } catch (err) {
+      // Validation already ran before upload, so this only guards a DB failure;
+      // clean up the just-uploaded images so they don't leak.
+      await deleteProductImages(productType, productId.toString());
+      throw err;
+    }
 
     await CategoryModel.findByIdAndUpdate(categoryId, {
       $push: { products: product._id },
@@ -91,7 +108,7 @@ export function createProductAdminController(
   ): Promise<void> => {
     await configureMulter(MAX_IMAGES)(req, res);
     const body = req.body as Body;
-    const { productId } = req.params;
+    const productId = String(req.params.productId);
 
     const product = await ProductModel.findById(productId);
     if (!product) {
@@ -130,8 +147,8 @@ export function createProductAdminController(
 
     const files = (req.files as Express.Multer.File[]) ?? [];
     if (files.length > 0) {
-      await deleteFilesFromS3(product.images);
-      product.images = await uploadFilesToS3(files);
+      await deleteProductImages(productType, productId);
+      product.images = await uploadProductImages(productType, productId, files);
     }
 
     const updated = await product.save();
@@ -147,7 +164,7 @@ export function createProductAdminController(
       throw AppError.notFound(ErrorCode.PRODUCT_NOT_FOUND, "Product not found");
     }
 
-    await deleteFilesFromS3(product.images);
+    await deleteProductImages(productType, product._id.toString());
     await CategoryModel.findByIdAndUpdate(product.category, {
       $pull: { products: product._id },
     });
