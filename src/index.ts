@@ -22,6 +22,7 @@ import animalAdminRoutes from "./modules/animal/routes/animalAdminRoutes";
 import faqAdminRoutes from "./modules/faq/routes/faqAdminRoutes";
 import questionAdminRoutes from "./modules/question/routes/questionAdminRoutes";
 import subscriptionAdminRoutes from "./modules/subscription/routes/subscriptionAdminRoutes";
+import smsAdminRoutes from "./modules/sms/routes/smsAdminRoutes";
 
 // Cart & User
 import cartRoutes from "./modules/cart/routes/cartRoutes";
@@ -61,6 +62,7 @@ app.use(
   isAdmin,
   subscriptionAdminRoutes
 );
+app.use("/admin/sms", authenticateToken, isAdmin, smsAdminRoutes);
 
 // ==================== CART & USER ====================
 app.use("/cart", cartRoutes);

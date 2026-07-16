@@ -37,6 +37,9 @@ export const ErrorCode = {
 
   // ── Subscriptions ──────────────────────────────────────────
   DUPLICATE_SUBSCRIPTION: "DUPLICATE_SUBSCRIPTION",
+
+  // ── SMS ────────────────────────────────────────────────────
+  SMS_SEND_FAILED: "SMS_SEND_FAILED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

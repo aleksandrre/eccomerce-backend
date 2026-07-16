@@ -1,7 +1,7 @@
 # Carizma Backend — Project Status Report
 
 **Last updated:** 2026-07-13
-**Stack:** TypeScript, Node.js, Express 4, MongoDB (Mongoose 8), JWT, AWS S3, Multer, Nodemailer
+**Stack:** TypeScript, Node.js, Express 4, MongoDB (Mongoose 8), JWT, AWS S3, Multer, Nodemailer, SMS Office (smsoffice.ge)
 **Scope of this pass:** Code-quality cleanup only — no new business domains (Orders/Checkout/Payments are a future phase). Endpoint **paths** were preserved; two **new cart endpoints** were added at the product owner's explicit request (see below).
 
 ---
@@ -18,7 +18,7 @@ src/
 │   ├── middlewares/             # auth, isAdmin, errorHandler, notFoundHandler
 │   ├── models/                  # UserModel, RefreshTokenModel, localizedStringSchema
 │   ├── factories/               # productReadFactory, productAdminFactory, categoryAdminFactory
-│   ├── services/                # s3Service, configureMulter
+│   ├── services/                # s3Service, smsService, configureMulter
 │   └── utils/                   # asyncHandler, apiResponse, validators, pricing, lang, authUtils, emailUtils
 └── modules/
     ├── auth/     (auth + email controllers/routes)
@@ -28,7 +28,8 @@ src/
     ├── user/
     ├── faq/
     ├── question/
-    └── subscription/
+    ├── subscription/
+    └── sms/       (admin test/monitoring endpoints; sending lives in shared/services/smsService.ts)
 ```
 
 The API is **trilingual** (`en`, `ka`, `ru`). Product/category/FAQ content is stored as `{ en, ka, ru }` objects and localized on read via the `?lang=` query param (default `en`).
@@ -48,6 +49,7 @@ The API is **trilingual** (`en`, `ka`, `ru`). Product/category/FAQ content is st
 | **faq** | Public list; admin manage FAQ types & questions | ✅ Working |
 | **question** | Public submit; admin list/delete-all | ✅ Working |
 | **subscription** | Public email/phone subscribe; admin list subscribers | ✅ Working |
+| **sms** | Reusable `sendSms` service (SMS Office / smsoffice.ge) callable from any module in one line; admin test-send / balance / delivery-status endpoints | ✅ Working |
 
 Authentication: short-lived JWT access token + long-lived refresh token (stored server-side with a TTL). Admin routes are guarded by `authenticateToken` + `isAdmin`.
 
@@ -153,7 +155,7 @@ Authentication: short-lived JWT access token + long-lived refresh token (stored 
 9. **Pagination + filtering + sorting** on product/question/subscriber lists.
 10. **Structured logging** (pino/winston) + centralized error monitoring (Sentry).
 11. **CI/CD + deployment config**, health-check endpoint, Dockerfile.
-12. **Order confirmation / transactional emails.**
+12. **Order confirmation / transactional emails + SMS.** The reusable `sendSms` helper (`shared/services/smsService.ts`) is already available for order-notification SMS in the Orders/Checkout phase; set `SMS_API_KEY`/`SMS_SENDER` in `.env` to enable it (optional — sends are a no-op when unset).
 
 ---
 

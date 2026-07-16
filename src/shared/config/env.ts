@@ -25,6 +25,10 @@ function loadEnv(): Record<RequiredVar, string> & {
   PORT: number;
   ACCESS_TOKEN_TTL: string;
   REFRESH_TOKEN_TTL: string;
+  // Optional SMS Office (smsoffice.ge) credentials. When absent, SMS sends are
+  // skipped with a warning instead of failing startup (see shared/services/smsService.ts).
+  SMS_API_KEY?: string;
+  SMS_SENDER?: string;
 } {
   const missing = REQUIRED_VARS.filter((key) => !process.env[key]);
   if (missing.length > 0) {
@@ -46,6 +50,9 @@ function loadEnv(): Record<RequiredVar, string> & {
     // Access token lifetime — short-lived; refreshed via /auth/token.
     ACCESS_TOKEN_TTL: process.env.ACCESS_TOKEN_TTL || "6h",
     REFRESH_TOKEN_TTL: process.env.REFRESH_TOKEN_TTL || "7d",
+    // Optional — SMS is a no-op when these are unset.
+    SMS_API_KEY: process.env.SMS_API_KEY,
+    SMS_SENDER: process.env.SMS_SENDER,
   };
 }
 

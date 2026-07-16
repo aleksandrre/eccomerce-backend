@@ -62,6 +62,7 @@ Switch on `code` for UI behavior; display or map `message` as needed.
 | `BELOW_MIN_KG` | 400 | Food quantity below product's `minKg` |
 | `CONFLICT` | 409 | Duplicate unique key (generic) |
 | `DUPLICATE_SUBSCRIPTION` | 409 | Email/phone already subscribed |
+| `SMS_SEND_FAILED` | 400 | Admin test SMS could not be sent (not configured or rejected by SMS Office) |
 | `INTERNAL_ERROR` | 500 | Unexpected server error (details hidden) |
 
 ### 1.4 Localization behavior
@@ -426,7 +427,30 @@ Deletes **all** questions.
 
 ---
 
-## 11. `/cart` (authenticated — all routes)
+## 11. `/admin/sms` (admin only)
+
+Manual controls for the SMS Office (smsoffice.ge) integration. The reusable
+`sendSms` service (see `PROJECT_STATUS.md`) is what other modules call; these
+endpoints exist for testing/monitoring. SMS credentials (`SMS_API_KEY`,
+`SMS_SENDER`) are **optional** — when unset, sends are skipped.
+
+### `POST /admin/sms/send`
+Body (`application/json`): `{ "to": "5XXXXXXXX" | ["5XXXXXXXX", ...], "message": "text", "reference"?: "≤20 chars" }`.
+Recipients may be local (`5XXXXXXXX`, auto-normalized to `995XXXXXXXX`) or already international.
+**Success `200`:** `data: { success: true, errorCode: 0, message, raw }`, `"SMS sent"`.
+**Errors:** `400 VALIDATION_ERROR` (missing `to`/`message`), `400 SMS_SEND_FAILED` (not configured or rejected by SMS Office).
+
+### `GET /admin/sms/balance`
+**Success `200`:** `data: { "balance": N | null }`, `"SMS balance fetched"` (`null` when unreadable/unconfigured).
+
+### `GET /admin/sms/status?destination=5XXXXXXXX&reference=<ref>`
+Looks up delivery status for a message previously sent with that `reference`.
+**Success `200`:** `data: { success, errorCode, message, raw }`, `"SMS status fetched"`.
+**Errors:** `400 VALIDATION_ERROR` (missing `destination`/`reference`).
+
+---
+
+## 12. `/cart` (authenticated — all routes)
 
 Header on every route: `Authorization: Bearer <accessToken>`.
 
@@ -509,7 +533,7 @@ Empty the whole cart.
 
 ---
 
-## 12. `/user` (authenticated)
+## 13. `/user` (authenticated)
 
 ### `GET /user/`
 Current user's profile.
@@ -531,7 +555,7 @@ Update profile fields. Only changed fields are applied; at least one change requ
 
 ---
 
-## 13. `/faq` (public)
+## 14. `/faq` (public)
 
 ### `GET /faq/`
 Active FAQ types with localized questions/answers. Query `?lang`.
@@ -550,7 +574,7 @@ Empty → `data: []`.
 
 ---
 
-## 14. `/question` (public)
+## 15. `/question` (public)
 
 ### `POST /question/add`
 Submit a contact question.
@@ -567,7 +591,7 @@ Submit a contact question.
 
 ---
 
-## 15. `/subscription` (public)
+## 16. `/subscription` (public)
 
 ### `POST /subscription/email/subscribe`
 **Body:** `{ "email": "user@example.com" }`
@@ -581,7 +605,7 @@ Submit a contact question.
 
 ---
 
-## 16. Quick route index
+## 17. Quick route index
 
 | Method | Path | Access |
 |---|---|---|
@@ -612,6 +636,9 @@ Submit a contact question.
 | DELETE | `/admin/question/deleteAll` | admin |
 | GET | `/admin/subscription/email/subscribers` | admin |
 | GET | `/admin/subscription/phone/subscribers` | admin |
+| POST | `/admin/sms/send` | admin |
+| GET | `/admin/sms/balance` | admin |
+| GET | `/admin/sms/status` | admin |
 | GET | `/cart/` | authenticated |
 | POST | `/cart/add` | authenticated |
 | PUT | `/cart/set-quantity` | authenticated |
