@@ -1,24 +1,24 @@
 import nodemailer from "nodemailer";
 import { IUserDocument } from "../models/UserModel";
+import { env } from "../config/env";
 
 const createTransporter = () =>
   nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.APP_PASSWORD,
+      user: env.EMAIL_USERNAME,
+      pass: env.APP_PASSWORD,
     },
-    tls: { rejectUnauthorized: false },
   });
 
 export async function sendVerificationEmail(
   user: IUserDocument
 ): Promise<void> {
   const transporter = createTransporter();
-  const link = `${process.env.BASE_URL}/email/verify/${user.emailVerificationToken}`;
+  const link = `${env.BASE_URL}/email/verify/${user.emailVerificationToken}`;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_USERNAME,
+    from: env.EMAIL_USERNAME,
     to: user.email,
     subject: "Email Verification",
     html: `<p>გამარჯობა ${user.name},</p>
@@ -31,10 +31,10 @@ export async function sendPasswordResetEmail(
   user: IUserDocument
 ): Promise<void> {
   const transporter = createTransporter();
-  const link = `${process.env.BASE_URL}/email/reset-password/${user.resetToken}`;
+  const link = `${env.BASE_URL}/email/reset-password/${user.resetToken}`;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_USERNAME,
+    from: env.EMAIL_USERNAME,
     to: user.email,
     subject: "Password Reset",
     html: `<p>გამარჯობა ${user.name},</p>

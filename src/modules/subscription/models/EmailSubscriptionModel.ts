@@ -8,15 +8,14 @@ export interface IEmailSubscriptionDocument
 const emailSubscriptionSchema = new Schema<IEmailSubscriptionDocument>({
   email: {
     type: String,
-    required: [true, "Email სავალდებულოა"],
+    required: [true, "Email is required"],
     unique: true,
     trim: true,
     lowercase: true,
     validate: {
       validator: (v: string) =>
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v),
-      message: (p: { value: string }) =>
-        `${p.value} არ არის სწორი email!`,
+      message: (p: { value: string }) => `${p.value} is not a valid email`,
     },
   },
   subscriptionDate: { type: Date, default: Date.now },

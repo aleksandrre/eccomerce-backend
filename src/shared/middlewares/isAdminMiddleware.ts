@@ -1,15 +1,20 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../types";
+import { AppError } from "../errors/AppError";
+import { ErrorCode } from "../errors/errorCodes";
 
 export function isAdmin(
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
   if (!req.user?.isAdmin) {
-    res
-      .status(403)
-      .json({ message: "წვდომა აკრძალულია. საჭიროა ადმინის უფლება." });
+    next(
+      AppError.forbidden(
+        ErrorCode.FORBIDDEN,
+        "Access denied. Admin privileges are required."
+      )
+    );
     return;
   }
   next();

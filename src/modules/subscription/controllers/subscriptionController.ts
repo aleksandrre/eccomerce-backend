@@ -1,33 +1,38 @@
 import { Request, Response } from "express";
 import { EmailSubscription } from "../models/EmailSubscriptionModel";
 import { PhoneSubscription } from "../models/PhoneSubscriptionModel";
+import { AppError } from "../../../shared/errors/AppError";
+import { ErrorCode } from "../../../shared/errors/errorCodes";
+import { sendSuccess } from "../../../shared/utils/apiResponse";
+import {
+  requireFields,
+  assertValidEmail,
+  PHONE_REGEX,
+} from "../../../shared/utils/validators";
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return (error as { code?: number })?.code === 11000;
+}
 
 export const subscribeEmail = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const { email } = req.body;
+  requireFields(req.body, ["email"]);
+  assertValidEmail(email);
+
   try {
-    const { email } = req.body;
-    if (!email) {
-      res
-        .status(400)
-        .json({ success: false, message: "გთხოვთ მიუთითოთ email" });
-      return;
-    }
-    const sub = await new EmailSubscription({ email }).save();
-    res.status(201).json({
-      success: true,
-      message: "Email გამოწერა წარმატებით დასრულდა",
-      data: sub,
-    });
+    const subscription = await EmailSubscription.create({ email });
+    sendSuccess(res, { subscription }, "Email subscribed successfully", 201);
   } catch (error) {
-    const isDuplicate = (error as { code?: number }).code === 11000;
-    res.status(isDuplicate ? 400 : 500).json({
-      success: false,
-      message: isDuplicate
-        ? "ეს email უკვე გამოწერილია"
-        : "შეცდომა გამოწერისას",
-    });
+    if (isDuplicateKeyError(error)) {
+      throw AppError.conflict(
+        ErrorCode.DUPLICATE_SUBSCRIPTION,
+        "This email is already subscribed"
+      );
+    }
+    throw error;
   }
 };
 
@@ -35,29 +40,26 @@ export const subscribePhone = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const { phoneNumber } = req.body;
+  requireFields(req.body, ["phoneNumber"]);
+  if (typeof phoneNumber !== "string" || !PHONE_REGEX.test(phoneNumber)) {
+    throw AppError.badRequest(
+      ErrorCode.VALIDATION_ERROR,
+      "A valid phone number is required (format: 5xxxxxxxx)"
+    );
+  }
+
   try {
-    const { phoneNumber } = req.body;
-    if (!phoneNumber) {
-      res.status(400).json({
-        success: false,
-        message: "გთხოვთ მიუთითოთ ტელეფონის ნომერი",
-      });
-      return;
-    }
-    const sub = await new PhoneSubscription({ phoneNumber }).save();
-    res.status(201).json({
-      success: true,
-      message: "ტელეფონის გამოწერა წარმატებით დასრულდა",
-      data: sub,
-    });
+    const subscription = await PhoneSubscription.create({ phoneNumber });
+    sendSuccess(res, { subscription }, "Phone subscribed successfully", 201);
   } catch (error) {
-    const isDuplicate = (error as { code?: number }).code === 11000;
-    res.status(isDuplicate ? 400 : 500).json({
-      success: false,
-      message: isDuplicate
-        ? "ეს ნომერი უკვე გამოწერილია"
-        : "შეცდომა გამოწერისას",
-    });
+    if (isDuplicateKeyError(error)) {
+      throw AppError.conflict(
+        ErrorCode.DUPLICATE_SUBSCRIPTION,
+        "This phone number is already subscribed"
+      );
+    }
+    throw error;
   }
 };
 
@@ -65,26 +67,26 @@ export const getEmailSubscribers = async (
   _req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const subs = await EmailSubscription.find().select(
-      "email subscriptionDate"
-    );
-    res.status(200).json({ success: true, count: subs.length, data: subs });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "შეცდომა" });
-  }
+  const subscribers = await EmailSubscription.find().select(
+    "email subscriptionDate"
+  );
+  sendSuccess(
+    res,
+    { count: subscribers.length, subscribers },
+    "Email subscribers fetched"
+  );
 };
 
 export const getPhoneSubscribers = async (
   _req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const subs = await PhoneSubscription.find().select(
-      "phoneNumber subscriptionDate"
-    );
-    res.status(200).json({ success: true, count: subs.length, data: subs });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "შეცდომა" });
-  }
+  const subscribers = await PhoneSubscription.find().select(
+    "phoneNumber subscriptionDate"
+  );
+  sendSuccess(
+    res,
+    { count: subscribers.length, subscribers },
+    "Phone subscribers fetched"
+  );
 };

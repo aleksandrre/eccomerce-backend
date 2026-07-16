@@ -50,9 +50,6 @@ export interface IUser {
   resetTokenExpires?: Date;
   cart: ICartItem[];
   createdAt: Date;
-  cartTotal: number;
-  cartOriginalTotal: number;
-  cartSavings: number;
 }
 
 // ==================== FOOD ====================
@@ -61,7 +58,7 @@ export interface IFoodCategory {
   _id: Types.ObjectId;
   name: ILocalizedString;
   description?: string;
-  icon: string;
+  image: string;
   slug: string;
   products: Types.ObjectId[];
 }
@@ -94,7 +91,7 @@ export interface IAnimalCategory {
   _id: Types.ObjectId;
   name: ILocalizedString;
   description?: string;
-  icon: string;
+  image: string;
   slug: string;
   products: Types.ObjectId[];
 }

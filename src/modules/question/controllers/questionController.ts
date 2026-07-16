@@ -1,47 +1,39 @@
 import { Request, Response } from "express";
 import { Question } from "../models/QuestionModel";
+import { sendSuccess } from "../../../shared/utils/apiResponse";
+import {
+  requireFields,
+  assertValidEmail,
+} from "../../../shared/utils/validators";
 
 export const addQuestion = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    await new Question(req.body).save();
-    res
-      .status(201)
-      .json({ success: true, message: "კითხვა წარმატებით დაემატა" });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "კითხვის დამატება ვერ მოხერხდა",
-    });
-  }
+  const { userName, email, title, question } = req.body;
+  requireFields(req.body, ["userName", "email", "question"]);
+  assertValidEmail(email);
+
+  await Question.create({ userName, email, title, question });
+  sendSuccess(res, null, "Question submitted successfully", 201);
 };
 
 export const getAllQuestion = async (
   _req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const questions = await Question.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, count: questions.length, data: questions });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "შეცდომა" });
-  }
+  const questions = await Question.find().sort({ createdAt: -1 });
+  sendSuccess(res, { count: questions.length, questions }, "Questions fetched");
 };
 
 export const deleteAllQuestion = async (
   _req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const result = await Question.deleteMany({});
-    res.status(200).json({
-      success: true,
-      message: "ყველა კითხვა წაიშალა",
-      deletedCount: result.deletedCount,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "შეცდომა" });
-  }
+  const result = await Question.deleteMany({});
+  sendSuccess(
+    res,
+    { deletedCount: result.deletedCount },
+    "All questions deleted"
+  );
 };
